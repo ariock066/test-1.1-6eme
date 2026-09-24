@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mission : Détective de l'Info - Le QCM Ultime</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1E1E1E;
+            --card-hover: #282828;
+            --text-color: #E0E0E0;
+            --text-muted: #A0A0A0;
+            --accent-color: #DEFF9A;
+            --accent-dark: #b8e668;
+            --correct-color: #4EAE67;
+            --correct-bg: rgba(78, 174, 103, 0.15);
+            --wrong-color: #FF6B6B;
+            --wrong-bg: rgba(255, 107, 107, 0.15);
+            --border-radius: 12px;
+            --font-main: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .quiz-container {
+            background-color: var(--card-bg);
+            border: 1px solid #2A2A2A;
+            border-radius: var(--border-radius);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 800px;
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* En-tête */
+        .quiz-header {
+            margin-bottom: 25px;
+            border-bottom: 1px solid #2C2C2C;
+            padding-bottom: 20px;
+        }
+
+        .badge-tag {
+            display: inline-block;
+            background-color: rgba(222, 255, 154, 0.1);
+            color: var(--accent-color);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            border: 1px solid rgba(222, 255, 154, 0.3);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: #FFFFFF;
+            margin-bottom: 15px;
+        }
+
+        /* Barre de progression */
+        .progress-box {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .progress-bar-bg {
+            flex-grow: 1;
+            height: 10px;
+            background-color: #2A2A2A;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-dark), var(--accent-color));
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+
+        .progress-text {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            min-width: 60px;
+            text-align: right;
+        }
+
+        /* Question */
+        .question-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #FFFFFF;
+            margin-bottom: 20px;
+        }
+
+        .options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .option-btn {
+            background-color: #262626;
+            border: 2px solid #333333;
+            border-radius: 10px;
+            color: var(--text-color);
+            padding: 16px 20px;
+            font-size: 1rem;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background-color: var(--card-hover);
+            border-color: var(--accent-color);
+            transform: translateY(-2px);
+        }
+
+        .option-btn:disabled {
+            cursor: default;
+        }
+
+        /* États des boutons de réponse */
+        .option-btn.correct {
+            background-color: var(--correct-bg);
+            border-color: var(--correct-color);
+            color: #FFFFFF;
+            font-weight: 600;
+        }
+
+        .option-btn.correct::after {
+            content: "✓";
+            color: var(--correct-color);
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .option-btn.wrong {
+            background-color: var(--wrong-bg);
+            border-color: var(--wrong-color);
+            color: #FFFFFF;
+        }
+
+        .option-btn.wrong::after {
+            content: "✕";
+            color: var(--wrong-color);
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .option-btn.dimmed {
+            opacity: 0.5;
+        }
+
+        /* Zone de Feedback */
+        .feedback-box {
+            background-color: #1A1A1A;
+            border-left: 4px solid var(--accent-color);
+            border-radius: 0 8px 8px 0;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .feedback-box.correct-fb {
+            border-left-color: var(--correct-color);
+        }
+
+        .feedback-box.wrong-fb {
+            border-left-color: var(--wrong-color);
+        }
+
+        .feedback-status {
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 5px;
+        }
+
+        .feedback-box.correct-fb .feedback-status {
+            color: var(--correct-color);
+        }
+
+        .feedback-box.wrong-fb .feedback-status {
+            color: var(--wrong-color);
+        }
+
+        .feedback-text {
+            font-size: 0.95rem;
+            color: var(--text-color);
+        }
+
+        /* Boutons d'action */
+        .actions-box {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: #121212;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 28px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(222, 255, 154, 0.2);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:disabled {
+            background-color: #333333;
+            color: #666666;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* Écran de résultats */
+        .results-screen {
+            text-align: center;
+            padding: 20px 0;
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .score-circle {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #252525 0%, #1A1A1A 100%);
+            border: 4px solid var(--accent-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 25px auto;
+            box-shadow: 0 0 20px rgba(222, 255, 154, 0.15);
+        }
+
+        .score-number {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: var(--accent-color);
+            line-height: 1;
+        }
+
+        .score-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+            text-transform: uppercase;
+        }
+
+        .result-title {
+            font-size: 1.6rem;
+            color: #FFFFFF;
+            margin-bottom: 12px;
+        }
+
+        .result-msg {
+            font-size: 1.05rem;
+            color: var(--text-color);
+            max-width: 600px;
+            margin: 0 auto 30px auto;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            max-width: 400px;
+            margin: 0 auto 30px auto;
+        }
+
+        .stat-card {
+            background-color: #1A1A1A;
+            border: 1px solid #2C2C2C;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .stat-val {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .stat-val.good { color: var(--correct-color); }
+        .stat-val.bad { color: var(--wrong-color); }
+
+        .stat-lbl {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 600px) {
+            .quiz-container {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 1.4rem;
+            }
+            .question-title {
+                font-size: 1.1rem;
+            }
+            .option-btn {
+                padding: 12px 16px;
+                font-size: 0.95rem;
+            }
+            .score-circle {
+                width: 130px;
+                height: 130px;
+            }
+            .score-number {
+                font-size: 2.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="quiz-container">
+        
+        <!-- ÉCRAN DU QUIZ -->
+        <div id="quiz-screen">
+            <div class="quiz-header">
+                <span class="badge-tag">🕵️‍♂️ Mission : Détective de l'Info</span>
+                <h1 id="quiz-title">Évaluation globale des compétences</h1>
+                
+                <div class="progress-box">
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="progress-fill"></div>
+                    </div>
+                    <div class="progress-text" id="progress-text">1 / 40</div>
+                </div>
+            </div>
+
+            <div class="question-box">
+                <div class="question-title" id="question-text">Chargement de la question...</div>
+                <div class="options-grid" id="options-container">
+                    <!-- Les boutons d'options seront générés dynamiquement -->
+                </div>
+            </div>
+
+            <div class="feedback-box" id="feedback-box">
+                <div class="feedback-status" id="feedback-status">Bonne réponse !</div>
+                <div class="feedback-text" id="feedback-text">Explication ici...</div>
+            </div>
+
+            <div class="actions-box">
+                <button class="btn-primary" id="next-btn" disabled>Question suivante ➔</button>
+            </div>
+        </div>
+
+        <!-- ÉCRAN DE RÉSULTATS -->
+        <div class="results-screen" id="results-screen">
+            <span class="badge-tag">Rapport d'enquête final</span>
+            
+            <div class="score-circle">
+                <div class="score-number" id="final-score-percent">0%</div>
+                <div class="score-label">Score Global</div>
+            </div>
+
+            <h2 class="result-title" id="result-badge">Titre du Détective</h2>
+            <p class="result-msg" id="result-message">Message personnalisé selon la performance...</p>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-val good" id="stat-correct">0</div>
+                    <div class="stat-lbl">Réponses correctes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-val bad" id="stat-wrong">0</div>
+                    <div class="stat-lbl">Erreurs / Pièges</div>
+                </div>
+            </div>
+
+            <button class="btn-primary" onclick="restartQuiz()">🔄 Recommencer l'entraînement</button>
+        </div>
+
+    </div>
+
+    <script>
+        // BANQUE DE 40 QUESTIONS BASÉE STRICTEMENT SUR LE COURS
+        const questionBank = [
+            // Slide 2 : Le Briefing
+            {
+                q: "Sur le terrain gigantesque qu'est Internet, quel pourcentage d'élèves de 6ème navigue sans méthode ?",
+                options: ["50%", "80%", "30%", "95%"],
+                answer: 1,
+                feedback: "Selon le briefing, 80% des élèves de 6ème naviguaient sur Internet sans méthode, risquant de tomber dans des pièges."
+            },
+            {
+                q: "Quel est le véritable « super-pouvoir » à développer pour devenir un bon Détective de l'Info ?",
+                options: ["L'esprit critique", "La vitesse de frappe sur clavier", "L'utilisation de chatbots IA", "L'envoi de messages rapides"],
+                answer: 0,
+                feedback: "L'esprit critique est ton véritable super-pouvoir pour distinguer la vérité des rumeurs."
+            },
+            
+            // Slide 3 : Mission 1 - Poser son besoin
+            {
+                q: "Quelle est la toute première règle avant de se jeter sur un écran de recherche ?",
+                options: ["Allumer l'ordinateur immédiatement", "Prendre une feuille et un crayon (« Le cerveau avant l'écran »)", "Lancer une vidéo YouTube", "Ouvrir Google Chrome"],
+                answer: 1,
+                feedback: "La règle fondamentale est « Le cerveau avant l'écran » : on prend d'abord une feuille et un crayon pour poser son besoin."
+            },
+            {
+                q: "Quelles sont les deux questions essentielles à se poser sur sa feuille avant de chercher ?",
+                options: ["« Pourquoi je cherche ? » et « De quoi ai-je besoin ? »", "« Combien ça coûte ? » et « Quel jour sommes-nous ? »", "« Qui est connecté ? » et « Quel navigateur ouvrir ? »", "« Où est mon téléphone ? » et « Quel est le mot de passe ? »"],
+                answer: 0,
+                feedback: "Il faut définir la raison de la recherche (exposé ou curiosité) et identifier précisément les informations manquantes."
+            },
+
+            // Slide 4 : L'Interrogatoire (4 questions magiques)
+            {
+                q: "La méthode de l'Interrogatoire repose sur 4 questions magiques. Quelles sont-elles ?",
+                options: ["Qui ? Quoi ? Quand ? Où ?", "Comment ? Combien ? Pourquoi ? Quel ?", "Où ? Quand ? Combien ? Pourquoi ?", "Qui ? Avec qui ? Pourquoi ? Comment ?"],
+                answer: 0,
+                feedback: "La méthode des 4 questions magiques regroupe : QUI (personnages), QUOI (l'événement), QUAND (date/époque), OÙ (lieu)."
+            },
+            {
+                q: "Dans la méthode des 4 questions magiques, à quoi correspond la question « QUOI ? »",
+                options: ["Au lieu géographique de l'action", "À la date de l'événement", "À l'événement, l'action et le cœur du sujet", "Aux témoins et personnages"],
+                answer: 2,
+                feedback: "Le « QUOI ? » représente l'événement, l'action centrale et le cœur de ton sujet de recherche."
+            },
+
+            // Slide 5 : L'Entonnoir de recherche (Mots-clés)
+            {
+                q: "Que devez-vous faire dans l'Entonnoir de recherche avant de lancer une requête ?",
+                options: ["Taper une phrase complète avec tous les mots", "Éliminer les petits mots inutiles et ne garder que les mots-clés", "Mettre des majuscules à chaque mot", "Traduire la phrase en anglais"],
+                answer: 1,
+                feedback: "Il ne faut jamais taper de phrases entières. L'entonnoir permet de filtrer les petits mots inutiles pour isoler les mots-clés."
+            },
+            {
+                q: "Si la recherche : « Qu'est-ce que mange un panda géant dans la nature ? » est filtrée dans l'entonnoir, que conserve-t-on ?",
+                options: ["qu'est-ce que mange panda", "alimentation panda géant", "mange panda nature", "dans la nature panda"],
+                answer: 1,
+                feedback: "L'entonnoir élimine « qu'est-ce que », « dans la » et transforme « mange » en un mot-clé précis comme « alimentation panda géant »."
+            },
+            {
+                q: "Quelle est « L'Astuce du Chef » si vous ne trouvez aucun résultat avec vos premiers mots-clés ?",
+                options: ["Abandonner la recherche", "Répéter 10 fois le même mot", "Penser aux synonymes et changer d'angle (ex: voiture ➔ automobile)", "Taper la recherche en lettres capitales"],
+                answer: 2,
+                feedback: "L'Astuce du Chef conseille de variabiliser ses termes en utilisant des synonymes ou en modifiant son angle de recherche."
+            },
+
+            // Slide 6 : Le Bon Équipement (Moteur de recherche)
+            {
+                q: "Pourquoi les moteurs de recherche pour adultes ne sont-ils pas toujours adaptés à un élève de collège ?",
+                options: ["Ils sont payants", "Ils ne contiennent aucune information utile", "Ils ne protègent pas la vie privée et peuvent montrer des contenus inadaptés", "Ils fonctionnent uniquement en anglais"],
+                answer: 2,
+                feedback: "Les moteurs classiques peuvent exposer à des contenus choquants et ne protègent pas toujours tes données personnelles."
+            },
+            {
+                q: "Quels sont deux moteurs/outils adaptés recommandés pour un Détective Junior ?",
+                options: ["Google et Yahoo", "Qwant Junior et Vikidia", "Bing et TikTok", "Instagram et Wikipedia"],
+                answer: 1,
+                feedback: "Qwant Junior et Vikidia sont conçus pour les jeunes : ils évitent les contenus choquants et protègent la vie privée."
+            },
+
+            // Slide 7 : Le Checkpoint (3 règles d'or)
+            {
+                q: "Quelle est la Règle d'Or n°1 du navigateur web ?",
+                options: ["Cliquer sur le premier lien de la liste", "Ne pas cliquer à l'aveugle sur le premier lien venu", "Toujours ouvrir les 10 premiers onglets", "Cliquer uniquement sur les images"],
+                answer: 1,
+                feedback: "Règle n°1 : Ne clique pas à l'aveugle ! Le tout premier lien n'est pas obligatoirement le meilleur ni le plus fiable."
+            },
+            {
+                q: "Qu'est-ce que le « snippet » (aperçu) qu'il faut scanner selon la Règle d'Or n°2 ?",
+                options: ["L'image d'illustration sur le côté", "Le petit résumé en noir sous le titre bleu dans les résultats", "L'adresse e-mail de l'auteur", "Le menu principal du site internet"],
+                answer: 1,
+                feedback: "Le snippet est le résumé en texte noir affiché sous le titre bleu. Il permet de vérifier si la page répond à ton besoin."
+            },
+            {
+                q: "Pourquoi faut-il fuir les liens précédés des mentions 'Sponsorisé' ou 'Annonce' (Règle d'Or n°3) ?",
+                options: ["Parce qu'ils sont périmés", "Parce que quelqu'un a payé pour afficher ce lien en haut", "Parce qu'ils contiennent des virus mortels", "Parce qu'ils sont réservés aux adultes"],
+                answer: 1,
+                feedback: "Un lien 'Sponsorisé' est une publicité. L'entreprise a payé pour figurer en haut, ce n'est pas forcément un gage de qualité."
+            },
+
+            // Slide 8 : La Veille
+            {
+                q: "En quoi consiste la pratique de « La Veille » d'information ?",
+                options: ["Rester éveillé toute la nuit pour lire la presse", "S'abonner à des flux pour recevoir automatiquement l'info sans la chercher", "Chercher des informations manuellement chaque matin", "Bloquer toutes les notifications"],
+                answer: 1,
+                feedback: "Faire de la veille, c'est mettre l'info sous surveillance : s'abonner pour que l'actualité vienne à toi automatiquement."
+            },
+
+            // Slide 9 : Les 3 Radars du Détective
+            {
+                q: "Combien de « Radars » le Détective possède-t-il pour capter l'information fiabilisée ?",
+                options: ["2 Radars", "3 Radars", "5 Radars", "1 seul Radar"],
+                answer: 1,
+                feedback: "Le cours présente 3 Radars : La Presse Jeunesse, Les Newsletters et Les Favoris."
+            },
+            {
+                q: "Où peut-on consulter la Presse Jeunesse (Radar n°1) comme *1jour1actu* ou *Mon Quotidien* ?",
+                options: ["Uniquement sur TikTok", "Au CDI de ton collège", "Sur les forums de jeux vidéo", "En écoutant la radio la nuit"],
+                answer: 1,
+                feedback: "La Presse Jeunesse est disponible au CDI. L'information y est déjà vérifiée et rédigée par des journalistes professionnels."
+            },
+            {
+                q: "En quoi consiste le Radar n°3 : « Les Favoris » ?",
+                options: ["Enregistrer ses sites préférés dans le navigateur pour vérifier leurs nouveautés en un clic", "Envoyer des cœurs aux journalistes", "Acheter des journaux en kiosque", "S'abonner à des comptes Instagram"],
+                answer: 0,
+                feedback: "Enregistrer un site fiable dans tes marque-pages/favoris permet de consulter ses publications rapidement et sûrement."
+            },
+
+            // Slide 10 & 11 : Les Réseaux Sociaux & Pièges
+            {
+                q: "Pourquoi les réseaux sociaux sont-ils qualifiés de « terrain le plus glissant » pour le Détective ?",
+                options: ["Parce que l'écran glisse des mains", "Parce que de courtes vidéos captivantes s'enchaînent avec des pièges dans le fil", "Parce qu'Internet y est plus lent", "Parce qu'ils sont réservés aux scientifiques"],
+                answer: 1,
+                feedback: "Sur les réseaux, l'enchaînement de vidéos courtes et captivantes masque souvent des pièges de désinformation."
+            },
+            {
+                q: "Quel est le Piège n°1 du fil d'actualité des réseaux sociaux ?",
+                options: ["L'application se ferme toutes les 5 minutes", "N'importe qui peut publier une vidéo sans être un expert ni un journaliste", "Le texte est écrit trop petit", "Les vidéos n'ont pas de son"],
+                answer: 1,
+                feedback: "Piège n°1 : Tout le monde peut poster une vidéo sans vérifier ses sources et sans être journaliste."
+            },
+            {
+                q: "Quel est l'objectif principal du « Robot de l'Algorithme » (Piège n°2 sur les réseaux) ?",
+                options: ["Te donner des notes scolaires", "Te garder en ligne le plus longtemps possible en te montrant ce que tu aimes déjà", "Nettoyer ton téléphone des virus", "Vérifier la vérité des publications"],
+                answer: 1,
+                feedback: "L'algorithme cherche à capter ton attention pour te garder en ligne en t'enfermant dans une « bulle de filtres »."
+            },
+            {
+                q: "Comment appelle-t-on le phénomène où l'algorithme ne te montre que des contenus similaires à tes goûts ?",
+                options: ["Le tunnel de vérité", "La bulle de filtres", "Le radar à fausses vidéos", "La boîte aux lettres"],
+                answer: 1,
+                feedback: "En te suggérant toujours ce qui ressemble à ce que tu as aimé, l'algorithme t'enferme dans une « bulle de filtres »."
+            },
+
+            // Slide 12 : Le Détecteur de Mensonges (Infox)
+            {
+                q: "Qu'est-ce qu'une Infox (Fake News) ?",
+                options: ["Une faute d'orthographe dans un article", "Une fausse information fabriquée volontairement pour tromper les gens", "Un bug informatique temporaire", "Un documentaire d'histoire"],
+                answer: 1,
+                feedback: "Une Infox est une information fausse, créée de toutes pièces avec l'intention délibérée de tromper le public."
+            },
+            {
+                q: "Quels sont les 3 buts secrets des créateurs d'Infox ?",
+                options: ["Faire peur (panique), Faire le buzz (clics), Faire vendre (gagner de l'argent)", "Aider les élèves, Informer poliment, Faire de la politique", "Apprendre l'anglais, Vendre des livres, Amuser les profs", "Protéger la vie privée, Nettoyer le Web, Faire des dons"],
+                answer: 0,
+                feedback: "Les 3 buts secrets sont : créer la panique/peur, générer du buzz (attirer des clics) et faire du profit commercial."
+            },
+
+            // Slide 13 : Le Virus de l'Infox
+            {
+                q: "Sur Internet, à quelle vitesse les fausses nouvelles se propagent-elles par rapport aux vraies informations ?",
+                options: ["2 fois moins vite", "Aussi vite", "6 FOIS PLUS VITE !", "100 fois plus lentement"],
+                answer: 2,
+                feedback: "Statistique choc : les fausses informations circulent en moyenne 6 fois plus vite que les informations vérifiées !"
+            },
+            {
+                q: "Face à la vitesse de propagation d'une Infox choc, que recommande le Chef Détective ?",
+                options: ["La repartager immédiatement à tous ses amis", "Ne jamais la partager sans l'avoir vérifiée au préalable", "L'envoyer par mail à son professeur", "Créer une deuxième fausse rumeur"],
+                answer: 1,
+                feedback: "Règle d'or absolue : Ne partage JAMAIS une info, photo ou vidéo choc sans vérification préalable."
+            },
+
+            // Slide 14 : Le Test de Sécurité (4 Questions Clés)
+            {
+                q: "Combien de verrous faut-il ouvrir dans le Test de Sécurité avant de croire une information ?",
+                options: ["2 verrous", "3 verrous", "4 verrous", "10 verrous"],
+                answer: 2,
+                feedback: "Le Test de Sécurité comporte 4 verrouils indispensables pour vérifier la solidité de l'information."
+            },
+            {
+                q: "Quel est le premier verrou à contrôler dans le Test de Sécurité ?",
+                options: ["QUI écrit ? (Journaliste, spécialiste ou inconnu sous pseudonyme)", "Combien d'images contient la page ?", "Le site est-il joli ?", "Y a-t-il de la musique ?"],
+                answer: 0,
+                feedback: "Verrou 1 : QUI écrit ? Il faut identifier la signature, la fonction et la crédibilité de l'auteur."
+            },
+            {
+                q: "Lorsqu'on analyse l'origine du site (Verrou 2 « D'OÙ vient le site ? »), quel élément est un gage fort de fiabilité publique ?",
+                options: ["Un site qui se termine par .gouv.fr ou un média reconnu comme France TV", "Un blog gratuit créé hier", "Un compte anonyme sur TikTok", "Un forum de discussion libre"],
+                answer: 0,
+                feedback: "Les extensions officielles comme .gouv.fr ou les médias reconnus garantissent un contrôle de l'information."
+            },
+            {
+                q: "Pourquoi est-il crucial de vérifier le Verrou 3 : « DE QUAND date l'info ? »",
+                options: ["Pour savoir si le soleil brillait", "Car une information ancienne peut être périmée ou sortie de son contexte d'origine", "Pour fêter un anniversaire", "Pour vérifier si le site fonctionne la nuit"],
+                answer: 1,
+                feedback: "Une information ancienne peut redevenir virale aujourd'hui alors qu'elle n'est plus du tout d'actualité."
+            },
+            {
+                q: "Que cherche-t-on à identifier avec le Verrou 4 : « QUEL est l'objectif ? »",
+                options: ["Si le texte cherche à t'informer poliment ou à provoquer la colère/peur/rire excessif", "Si l'auteur veut devenir ton ami", "Si le site vend des vêtements", "Si le texte fait plus de 1000 mots"],
+                answer: 0,
+                feedback: "Si le texte cherche à susciter une émotion forte (colère, peur), méfiance : il s'agit souvent d'une manipulation."
+            },
+
+            // Slide 15 : Matrice d'Analyse (Média fiable vs Douteux)
+            {
+                q: "Sur un Média Fiable (ex: Lumni, 1jour1actu), comment le Titre est-il rédigé ?",
+                options: ["EXAGÉRÉ EN MAJUSCULES (ex: INCROYABLE ! REGARDEZ CA !)", "Clair, précis et objectif", "Sous forme de devinette rigolote", "Avec beaucoup de fautes d'orthographe"],
+                answer: 1,
+                feedback: "Un vrai média utilise un titre clair, précis et objectif. Les titres racoleurs en majuscules signalent un site douteux."
+            },
+            {
+                q: "Comment un Média Fiable traite-t-il ses SOURCES d'information ?",
+                options: ["Il utilise des phrases comme « On m'a dit que... »", "Il ne donne jamais ses sources", "Il cite des spécialistes et apporte des preuves vérifiables", "Il copie sur les réseaux sociaux"],
+                answer: 2,
+                feedback: "Le média fiable s'appuie sur des experts identifiés et des données vérifiables, contrairement aux sites douteux."
+            },
+            {
+                q: "Quelle est la particularité des IMAGES utilisées par un Site Douteux ?",
+                options: ["Photos réelles avec nom du photographe", "Images trafiquées, volées ou générées par Intelligence Artificielle (IA)", "Dessins faits à la main par des enfants", "Absence totale d'images"],
+                answer: 1,
+                feedback: "Les sites douteux emploient fréquemment des images falsifiées, décontextualisées ou générées par IA sans crédit."
+            },
+
+            // Slide 16 : Synthèse (Le Cycle du Détective)
+            {
+                q: "Combien d'étapes comporte le Cycle complet du Détective de l'Info ?",
+                options: ["3 étapes", "4 étapes", "6 étapes", "10 étapes"],
+                answer: 1,
+                feedback: "Le Cycle du Détective comporte 4 étapes fondamentales : 1. Questionner, 2. Chercher, 3. Vérifier, 4. Utiliser."
+            },
+            {
+                q: "Quelle est la 1ère étape du Cycle du Détective de l'Info ?",
+                options: ["VÉRIFIER la fiabilité", "QUESTIONNER (Définir son sujet avec Qui/Quoi/Quand/Où et ses mots-clés)", "CHERCHER sur un moteur", "UTILISER dans son devoir"],
+                answer: 1,
+                feedback: "Étape 1 : QUESTIONNER. On définit son sujet avant d'ouvrir un navigateur."
+            },
+            {
+                q: "Quelle est la 2ème étape du Cycle du Détective ?",
+                options: ["UTILISER l'information", "CHERCHER (Utiliser un moteur sécurisé comme Qwant Junior et repérer les bons liens)", "QUESTIONNER son professeur", "Rédiger un bilan"],
+                answer: 1,
+                feedback: "Étape 2 : CHERCHER. Utiliser les bons équipements et observer attentivement les résultats de recherche."
+            },
+            {
+                q: "Quelle est la 3ème étape du Cycle du Détective ?",
+                options: ["VÉRIFIER (Tester la fiabilité : Vrai Média vs Douteux et croiser les sources)", "Publier sur Instagram", "Copier le texte complet", "Imprimer la page"],
+                answer: 0,
+                feedback: "Étape 3 : VÉRIFIER. Appliquer le test de sécurité et croiser l'information avec d'autres sources."
+            },
+            {
+                q: "Dans la 4ème étape « UTILISER », quelle est l'interdiction absolue lors de la restitution de votre travail ?",
+                options: ["Écrire avec un stylo bleu", "Faire du copier-coller / plagiat sans reformuler avec ses propres mots", "Donner son avis", "Citer la date du jour"],
+                answer: 1,
+                feedback: "Utiliser l'info signifie REFORMULER avec ses propres mots. Le copier-coller direct est du plagiat !"
+            },
+
+            // Questions transversales d'approfondissement
+            {
+                q: "Si vous lisez un titre : « CHOC ! Un monstre aperçu à Paris, cliquez vite avant suppression ! », que déduisez-vous ?",
+                options: ["C'est une information vérifiée de grande valeur", "C'est un piège (Infox/Buzz) avec titre exagéré en majuscules", "C'est un communiqué de la mairie de Paris", "C'est une pub pour un vêtement"],
+                answer: 1,
+                feedback: "Titre en majuscules, vocabulaire émotionnel (CHOC) et incitation au clic rapide = indices typiques d'une Infox."
+            },
+            {
+                q: "Un camarade vous partage une vidéo spectaculaire vue sur TikTok. Quelle est la première réaction du Détective ?",
+                options: ["La repartager immédiatement dans le groupe de classe", "Appliquer le Test de Sécurité (Qui, D'où, Quand, Quel objectif) avant de croire ou partager", "Supprimer son compte TikTok", "L'envoyer aux journalistes"],
+                answer: 1,
+                feedback: "Avant toute réaction ou partage, on active son esprit critique et on applique les 4 questions du Test de Sécurité."
+            }
+        ];
+
+        // ÉTAT DU QUIZ
+        let shuffledQuestions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let userSelected = false;
+
+        // ÉLÉMENTS DOM
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultsScreen = document.getElementById('results-screen');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const progressFill = document.getElementById('progress-fill');
+        const progressText = document.getElementById('progress-text');
+        const feedbackBox = document.getElementById('feedback-box');
+        const feedbackStatus = document.getElementById('feedback-status');
+        const feedbackText = document.getElementById('feedback-text');
+        const nextBtn = document.getElementById('next-btn');
+
+        // ALGORITHME DE MÉNAGE / SHUFFLE (FISHER-YATES)
+        function shuffleArray(array) {
+            let arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // INITIALISATION DU QUIZ
+        function initQuiz() {
+            // Mélange des 40 questions
+            shuffledQuestions = shuffleArray(questionBank).map(qObj => {
+                // Pour chaque question, on mélange aussi les options
+                const originalOptions = qObj.options.map((opt, idx) => ({ text: opt, isCorrect: idx === qObj.answer }));
+                const shuffledOpts = shuffleArray(originalOptions);
+                return {
+                    q: qObj.q,
+                    options: shuffledOpts,
+                    feedback: qObj.feedback
+                };
+            });
+
+            currentQuestionIndex = 0;
+            score = 0;
+            
+            quizScreen.style.display = 'block';
+            resultsScreen.style.display = 'none';
+            
+            showQuestion();
+        }
+
+        // AFFICHAGE D'UNE QUESTION
+        function showQuestion() {
+            userSelected = false;
+            nextBtn.disabled = true;
+            feedbackBox.style.display = 'none';
+
+            const currentQ = shuffledQuestions[currentQuestionIndex];
+
+            // Mise à jour de la progression
+            const total = shuffledQuestions.length;
+            const currentNum = currentQuestionIndex + 1;
+            progressText.innerText = `${currentNum} / ${total}`;
+            progressFill.style.width = `${(currentNum / total) * 100}%`;
+
+            // Texte de la question
+            questionText.innerText = `${currentNum}. ${currentQ.q}`;
+
+            // Génération des options
+            optionsContainer.innerHTML = '';
+            currentQ.options.forEach((optObj, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = optObj.text;
+                btn.onclick = () => selectOption(idx, optObj.isCorrect);
+                optionsContainer.appendChild(btn);
+            });
+
+            // Mettre à jour le libellé du bouton suivant
+            if (currentQuestionIndex === shuffledQuestions.length - 1) {
+                nextBtn.innerText = "Consulter le Bilan Final ➔";
+            } else {
+                nextBtn.innerText = "Question suivante ➔";
+            }
+        }
+
+        // SELECTION D'UNE RÉPONSE
+        function selectOption(selectedIndex, isCorrect) {
+            if (userSelected) return; // Empêche de changer de réponse
+            userSelected = true;
+
+            const buttons = optionsContainer.querySelectorAll('.option-btn');
+            const currentQ = shuffledQuestions[currentQuestionIndex];
+
+            // Désactivation de tous les boutons et application des styles
+            buttons.forEach((btn, idx) => {
+                btn.disabled = true;
+                if (currentQ.options[idx].isCorrect) {
+                    btn.classList.add('correct');
+                } else if (idx === selectedIndex) {
+                    btn.classList.add('wrong');
+                } else {
+                    btn.classList.add('dimmed');
+                }
+            });
+
+            // Traitement du score et feedback
+            if (isCorrect) {
+                score++;
+                feedbackBox.className = 'feedback-box correct-fb';
+                feedbackStatus.innerText = "✨ Excellente déduction ! (Bonne réponse)";
+            } else {
+                feedbackBox.className = 'feedback-box wrong-fb';
+                feedbackStatus.innerText = "⚠️ Piège détecté ! (Mauvaise réponse)";
+            }
+
+            feedbackText.innerText = currentQ.feedback;
+            feedbackBox.style.display = 'block';
+
+            nextBtn.disabled = false;
+        }
+
+        // BOUTON SUIVANT
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < shuffledQuestions.length - 1) {
+                currentQuestionIndex++;
+                showQuestion();
+            } else {
+                showResults();
+            }
+        });
+
+        // ECRAN FINAL DE SCORE
+        function showResults() {
+            quizScreen.style.display = 'none';
+            resultsScreen.style.display = 'block';
+
+            const total = shuffledQuestions.length;
+            const percentage = Math.round((score / total) * 100);
+
+            document.getElementById('final-score-percent').innerText = `${percentage}%`;
+            document.getElementById('stat-correct').innerText = score;
+            document.getElementById('stat-wrong').innerText = total - score;
+
+            const badgeEl = document.getElementById('result-badge');
+            const msgEl = document.getElementById('result-message');
+
+            if (percentage >= 90) {
+                badgeEl.innerText = "🏆 Grand Maître Détective de l'Info";
+                msgEl.innerText = "Extraordinaire ! Tu maîtrises parfaitement l'esprit critique, le contrôle des sources et la chasse aux Infox. Le Web n'a plus aucun secret pour toi !";
+            } else if (percentage >= 75) {
+                badgeEl.innerText = "⭐ Détective Confirmé";
+                msgEl.innerText = "Très bon travail ! Tu sais contourner les pièges des algorithmes et repérer la fiabilité des médias avec méthode.";
+            } else if (percentage >= 50) {
+                badgeEl.innerText = "🔍 Apprenti Enquêteur";
+                msgEl.innerText = "Pas mal ! Tu as de bons réflexes, mais attention à ne pas tomber dans certains pièges ou à aller trop vite lors de tes recherches.";
+            } else {
+                badgeEl.innerText = "📁 Stagiaire à l'entraînement";
+                msgEl.innerText = "L'entraînement doit se poursuivre ! Relis attentivement le manuel, mémorise les 4 questions magiques et refais le test pour affûter ton super-pouvoir.";
+            }
+        }
+
+        // REDÉMARRAGE DU QUIZ
+        function restartQuiz() {
+            initQuiz();
+        }
+
+        // Lancement au chargement
+        window.onload = initQuiz;
+    </script>
+</body>
+</html>
